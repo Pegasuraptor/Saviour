@@ -1,0 +1,15 @@
+<levels>
+  <level option1="speed" option2="firerate"/>
+  <level option1="multi" option2="homing"/>
+  <level option1="speed" option2="firerate"/>
+  <level option1="shield" option2="sidekick"/>
+  <level option1="multi" option2="homing"/>
+  <level option1="speed" option2="firerate"/>
+  <level option1="multi" option2="homing"/>
+  <level option1="speed" option2="firerate"/>
+  <level option1="shield" option2="sidekick"/>
+  <level option1="multi" option2="homing"/>
+  <level option1="shield" option2="sidekick"/>
+</levels>
+
+

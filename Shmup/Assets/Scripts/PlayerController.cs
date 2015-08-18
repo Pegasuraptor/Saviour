@@ -4,36 +4,28 @@ using System.Collections.Generic;
 
 public class PlayerController : MonoBehaviour 
 {
-    private const int OPTION_MAX = 2;
-    private const int HOMING_MAX = 4;
-    private const int MULTI_MAX = 4;
-
-    public float speed;
+    
     public float tilt;
     public Boundary screenBoundary;
     public Transform mainGun;
-    public Transform optionSlot1;
-    public Transform optionSlot2;
+    public Transform[] sidekickSlots;
     public GameObject shield;
     public GameObject bolt;
     public GameObject specialBolt;
-    public GameObject option;
-    public float fireRate;
+    public GameObject sidekick;
+
     public int shotsUntilSpecial;
 
     private float timeUntilNextShot;
     private int shotsFired;
-    public int homingLevel;
-    public int multiLevel;
-    public int optionLevel;
+    public LevelManager levelManager;
     private float[] multiFireAngles;
 
     void Start()
     {
+        levelManager.SetUp();
         shield.SetActive(false);
         shotsFired = 0;
-        homingLevel = 0;
-        multiLevel = 0;
         multiFireAngles = new float[] {-40f, 40f, 20f, -20f };
     }
 
@@ -43,7 +35,7 @@ public class PlayerController : MonoBehaviour
 		float moveVertical = Input.GetAxis ("Vertical");
 
         Vector3 movement = new Vector3(-moveVertical, 0.0f, moveHorizontal);
-        GetComponent<Rigidbody>().velocity = movement * speed;
+        GetComponent<Rigidbody>().velocity = movement * levelManager.speed;
 
         float xBounds = Mathf.Clamp(GetComponent<Rigidbody>().position.x, screenBoundary.xMin, screenBoundary.xMax);
         float zBounds = Mathf.Clamp(GetComponent<Rigidbody>().position.z, screenBoundary.zMin, screenBoundary.zMax);
@@ -51,120 +43,121 @@ public class PlayerController : MonoBehaviour
 
         GetComponent<Rigidbody>().rotation = Quaternion.Euler(0.0f, 0.0f, GetComponent<Rigidbody>().velocity.x * tilt);
 
-        if (optionSlot1.childCount != 0)
+        Transform tempTransform;
+        for (int i = 0; i < sidekickSlots.Length; i++)
         {
-            optionSlot1.GetChild(0).gameObject.GetComponent<Rigidbody>().position = optionSlot1.position;
-            optionSlot1.GetChild(0).gameObject.GetComponent<Rigidbody>().rotation = Quaternion.Euler(0.0f, 0.0f, GetComponent<Rigidbody>().velocity.x * tilt);
-        }
-
-        if (optionSlot2.childCount != 0)
-        {
-            optionSlot2.GetChild(0).gameObject.GetComponent<Rigidbody>().position = optionSlot2.position;
-            optionSlot2.GetChild(0).gameObject.GetComponent<Rigidbody>().rotation = Quaternion.Euler(0.0f, 0.0f, GetComponent<Rigidbody>().velocity.x * tilt);
+            tempTransform = sidekickSlots[i];
+            if (tempTransform.childCount > 0)
+            {
+                tempTransform.GetChild(0).gameObject.GetComponent<Rigidbody>().position = tempTransform.position;
+                tempTransform.GetChild(0).gameObject.GetComponent<Rigidbody>().rotation = Quaternion.Euler(0.0f, 0.0f, GetComponent<Rigidbody>().velocity.x * tilt);
+            }
         }
 	}
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
+        levelManager.isShieldActive = shield.activeSelf;
+        
+        if(Input.GetKey(KeyCode.Q))
         {
-            if(multiLevel < MULTI_MAX)
-                multiLevel++;
-
-            if(homingLevel < HOMING_MAX)
-                homingLevel++;
-
-            if(optionLevel < OPTION_MAX)
-                AddOption();
-
-            shield.SetActive(!shield.activeSelf);
+            levelManager.LevelUp(0);
         }
+        else if(Input.GetKey(KeyCode.E))
+        {
+            levelManager.LevelUp(1);
+        }
+
+        shield.SetActive(levelManager.isShieldActive);
 
         if (Input.GetButton("Fire1") && Time.time > timeUntilNextShot)
         {
             //StandardFire
-            timeUntilNextShot = Time.time + fireRate;
+            timeUntilNextShot = Time.time + levelManager.fireRate;
             Instantiate(bolt, mainGun.position, mainGun.rotation);
             GetComponent<AudioSource>().Play();
 
             //MultiFire
-            for (int i = 0; i < multiLevel; i++)
+            for (int i = 0; i < levelManager.multiLevel; i++)
             {
                 Instantiate(bolt, mainGun.position, Quaternion.Euler(0, multiFireAngles[i], 0));
             }
 
             //HomingFire
-            if (homingLevel > 0)
+            if (levelManager.homingLevel > 0)
             {
                 shotsFired++;
 
-                if (shotsFired >= (shotsUntilSpecial - (2 * homingLevel)))
+                if (shotsFired >= (shotsUntilSpecial - (2 * levelManager.homingLevel)))
                 {
                     shotsFired = 0;
                     Instantiate(specialBolt, mainGun.position, mainGun.rotation);
                 }
             }
    
-            //OptionFire
-            if (optionSlot1.childCount != 0)
+            //sidekickFire
+            if(levelManager.sidekickLevel > 0)
             {
-                Instantiate(bolt, optionSlot1.position, optionSlot1.rotation);
-            }
+                int count = 0;
+                Transform tempTransform;
+                for (int i = 0; i < sidekickSlots.Length; i++)
+                {
+                    tempTransform = sidekickSlots[i];
+                    if (tempTransform.childCount > 0)
+                    {
+                        count++;
+                        Instantiate(bolt, tempTransform.GetChild(0).position, tempTransform.GetChild(0).rotation);
+                    }
+                }
 
-            if (optionSlot2.childCount != 0)
-            {
-                Instantiate(bolt, optionSlot2.position, optionSlot2.rotation);
+                if(count != levelManager.sidekickLevel)
+                {
+                    AddSidekick();
+                }
             }
         }
     }
 
-    void AddOption()
+    void AddSidekick()
     {
-        optionLevel++;
         GameObject temp;
+        Transform tempTransform;
 
-        if(optionSlot1.childCount == 0)
+        for (int i = 0; i < sidekickSlots.Length; i++)
         {
-            temp = (GameObject)Instantiate(option, optionSlot1.position, optionSlot1.rotation);
-            temp.transform.parent = optionSlot1;
-            temp = null;
-            return;
-        }
+            tempTransform = sidekickSlots[i];
+            if (tempTransform.childCount == 0)
+            {
+                temp = (GameObject)Instantiate(sidekick, tempTransform.position, tempTransform.rotation);
+                temp.transform.parent = tempTransform;
+                temp = null;
+                return;
+            }
 
-        if(optionSlot2.childCount == 0)
-        {
-            temp = (GameObject)Instantiate(option, optionSlot2.position, optionSlot2.rotation);
-            temp.transform.parent = optionSlot2;
-            temp = null;
-            return;
+            tempTransform = null;
         }
     }
 
-    public void RemoveOption(GameObject o)
+    public void RemoveSidekick(GameObject o)
     {
-        optionLevel--;
-        Transform temp;
+        levelManager.sidekickLevel--;
+        Transform tempTransform;
 
-        if (optionSlot1.childCount != 0)
+        for (int i = 0; i < sidekickSlots.Length; i++)
         {
-            temp = optionSlot1.GetChild(0);
-            if(temp == o.transform)
+            tempTransform = sidekickSlots[i];
+            if (tempTransform.childCount > 0)
             {
-                temp = null;
-                Destroy(o);
-                return;
+                tempTransform = tempTransform.GetChild(0);
+                if (tempTransform == o.transform)
+                {
+                    tempTransform = null;
+                    Destroy(o);
+                    return;
+                }
             }
-        }
 
-        if (optionSlot2.childCount != 0)
-        {
-            temp = optionSlot2.GetChild(0);
-            if (temp == o.transform)
-            {
-                temp = null;
-                Destroy(o);
-                return;
-            }
+            tempTransform = null;
         }
     }
 }

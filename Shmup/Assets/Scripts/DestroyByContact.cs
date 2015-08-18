@@ -54,11 +54,12 @@ public class DestroyByContact : MonoBehaviour
             case "PlayerWeaponFire":
                 Destroy(other.gameObject);
                 Destroy(gameObject);
+                playerController.levelManager.AddXP(10);
                 Instantiate(asteroidExplosion, transform.position, transform.rotation);
                 gameController.AddScore(scoreValue);
                 break;
             case "Option":
-                playerController.RemoveOption(other.gameObject);
+                playerController.RemoveSidekick(other.gameObject);
                 Destroy(gameObject);
                 Instantiate(asteroidExplosion, transform.position, transform.rotation);
                 Instantiate(playerExplosion, other.transform.position, other.transform.rotation);
