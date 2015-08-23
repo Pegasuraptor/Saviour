@@ -18,9 +18,9 @@ class Level
 
 [System.Serializable]
 public class LevelManager {
-    private const int SIDEKICK_MAX = 2;
     private const int HOMING_MAX = 4;
     private const int MULTI_MAX = 4;
+    private const int LEVEL_MAX = 11;
 
     private Level[] level;
     private string[] levelPrompts;
@@ -37,6 +37,7 @@ public class LevelManager {
     public int homingLevel;
     public int multiLevel;
     public int sidekickLevel;
+    public int sidekickMax;
     public float speed;
     public float fireRate;
 
@@ -49,6 +50,7 @@ public class LevelManager {
         levelPrompts = new string[6] {"Speed Up", "Firerate Up", "Multi-Shot", "Homing Shot", "Shield", "Sidekick"};
         levelProgressBar.sizeDelta = new Vector2(0, 30);
 
+        //Move this to an external file.
         level[0] = new Level(LevelOptions.speed, LevelOptions.firerate);
         level[1] = new Level(LevelOptions.multi, LevelOptions.homing);
         level[2] = new Level(LevelOptions.speed, LevelOptions.firerate);
@@ -90,7 +92,12 @@ public class LevelManager {
 
     void PromptLevelUp()
     {
-        Level tempLevel = level[nextLevel - 1];
+        Level tempLevel;
+        if (nextLevel < LEVEL_MAX)
+            tempLevel = level[nextLevel - 1];
+        else
+            tempLevel = level[LEVEL_MAX - 1];
+
         levelUpText1.text = "Q: " + levelPrompts[(int)tempLevel.options[0]];
         levelUpText2.text = "E: " + levelPrompts[(int)tempLevel.options[1]];
         awaitingInput = true;
@@ -100,7 +107,12 @@ public class LevelManager {
     {
         if(awaitingInput)
         {
-            Level tempLevel = level[nextLevel - 1];
+            Level tempLevel;
+            if (nextLevel < LEVEL_MAX)
+                tempLevel = level[nextLevel - 1];
+            else
+                tempLevel = level[LEVEL_MAX - 1];
+
             LevelOptions chosen = tempLevel.options[option];
             HandleUpgradeChoice(chosen);
 
@@ -143,7 +155,7 @@ public class LevelManager {
                 isShieldActive = true;
                 break;
             case LevelOptions.sidekick:
-                if(sidekickLevel < SIDEKICK_MAX)
+                if (sidekickLevel < sidekickMax)
                     sidekickLevel++;
                 break;
             default:

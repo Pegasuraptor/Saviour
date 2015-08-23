@@ -18,14 +18,17 @@ public class PlayerController : MonoBehaviour
 
     private float timeUntilNextShot;
     private int shotsFired;
+    private int numSidekicks;
     public LevelManager levelManager;
     private float[] multiFireAngles;
 
     void Start()
     {
         levelManager.SetUp();
+        levelManager.sidekickMax = sidekickSlots.Length;
         shield.SetActive(false);
         shotsFired = 0;
+        numSidekicks = 0;
         multiFireAngles = new float[] {-40f, 40f, 20f, -20f };
     }
 
@@ -70,6 +73,11 @@ public class PlayerController : MonoBehaviour
 
         shield.SetActive(levelManager.isShieldActive);
 
+        if(numSidekicks != levelManager.sidekickLevel)
+        {
+            AddSidekick();
+        }
+
         if (Input.GetButton("Fire1") && Time.time > timeUntilNextShot)
         {
             //StandardFire
@@ -98,21 +106,15 @@ public class PlayerController : MonoBehaviour
             //sidekickFire
             if(levelManager.sidekickLevel > 0)
             {
-                int count = 0;
                 Transform tempTransform;
                 for (int i = 0; i < sidekickSlots.Length; i++)
                 {
                     tempTransform = sidekickSlots[i];
                     if (tempTransform.childCount > 0)
                     {
-                        count++;
+
                         Instantiate(bolt, tempTransform.GetChild(0).position, tempTransform.GetChild(0).rotation);
                     }
-                }
-
-                if(count != levelManager.sidekickLevel)
-                {
-                    AddSidekick();
                 }
             }
         }
@@ -131,6 +133,7 @@ public class PlayerController : MonoBehaviour
                 temp = (GameObject)Instantiate(sidekick, tempTransform.position, tempTransform.rotation);
                 temp.transform.parent = tempTransform;
                 temp = null;
+                numSidekicks++;
                 return;
             }
 
@@ -141,6 +144,7 @@ public class PlayerController : MonoBehaviour
     public void RemoveSidekick(GameObject o)
     {
         levelManager.sidekickLevel--;
+        numSidekicks--;
         Transform tempTransform;
 
         for (int i = 0; i < sidekickSlots.Length; i++)
