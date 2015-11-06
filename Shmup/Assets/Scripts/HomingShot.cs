@@ -16,7 +16,7 @@ public class HomingShot : MonoBehaviour {
 
         if(!hazardContainer)
         {
-            Debug.Log("MissileGuidance cannot find HazardContainer script.");
+            Debug.Log("HomingShot cannot find HazardContainer script.");
         }
 
         lockedOn = false;

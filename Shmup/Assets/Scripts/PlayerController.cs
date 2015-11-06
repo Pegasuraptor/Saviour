@@ -61,6 +61,11 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         levelManager.isShieldActive = shield.activeSelf;
+
+        //Until I have a better way of doing this...
+        //Move at the same speed as the camera.
+        screenBoundary.zMin += 0.01f;
+        screenBoundary.zMax += 0.01f;
         
         if(Input.GetKey(KeyCode.Q))
         {
